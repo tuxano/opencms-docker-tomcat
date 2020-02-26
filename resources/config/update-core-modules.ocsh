@@ -1,0 +1,10 @@
+login Admin admin
+setSiteRoot "/"
+
+# Import the CORE modules
+replaceModule "/home/app/artifacts/org.opencms.base.zip"
+replaceModule "/home/app/artifacts/org.opencms.configuration.zip"
+
+exit
+
+

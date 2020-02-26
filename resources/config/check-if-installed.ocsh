@@ -1,0 +1,7 @@
+login Admin admin
+setSiteRoot "/"
+
+# list modules
+readFile "/system/modules/org.opencms.base/.config"
+
+exit
