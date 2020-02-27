@@ -46,6 +46,62 @@ then
 
 	echo "OpenCms installed"
 
+	if [ ! -z "$ADMIN_PASSWD" ]; then
+		echo "Changing Admin password for update"
+		sed -i -- "s/Admin admin/\"Admin\" \"${ADMIN_PASSWD}\"/g" ${APP_HOME}config/update*
+	fi
+
+	echo "Extract modules and libs"
+	unzip -q -d ${ARTIFACTS_FOLDER}TEMP ${ARTIFACTS_FOLDER}opencms.war
+	mv ${ARTIFACTS_FOLDER}TEMP/WEB-INF/packages/modules/* ${ARTIFACTS_FOLDER}
+
+	mv ${ARTIFACTS_FOLDER}TEMP/WEB-INF/lib/* ${ARTIFACTS_FOLDER}libs
+	echo "Renaming modules to remove version number"
+	for file in ${ARTIFACTS_FOLDER}*.zip
+	do
+   		mv $file ${file%-*}".zip"
+	done
+
+	echo "Creating backup of opencms-modules.xml at ${OPENCMS_HOME}/WEB-INF/config/backups/opencms-modules-preinst.xml"
+	if [ ! -d ${OPENCMS_HOME}/WEB-INF/config/backups ]; then
+		mkdir -v -p ${OPENCMS_HOME}/WEB-INF/config/backups
+	fi
+	cp -f -v ${OPENCMS_HOME}/WEB-INF/config/opencms-modules.xml ${OPENCMS_HOME}/WEB-INF/config/backups/opencms-modules-preinst.xml
+	
+	echo "Updating config files with the version from the OpenCms WAR"
+	unzip -q -o -d ${OPENCMS_HOME} ${ARTIFACTS_FOLDER}opencms.war WEB-INF/packages/modules/*.zip WEB-INF/lib/*.jar
+	IFS=',' read -r -a FILES <<< "$UPDATE_CONFIG_FILES"
+	for FILENAME in ${FILES[@]}
+	do
+		if [ -f "${OPENCMS_HOME}${FILENAME}" ]
+		then
+			rm -rf "${OPENCMS_HOME}${FILENAME}"
+		fi
+		echo "Moving file from \"${ARTIFACTS_FOLDER}TEMP/${FILENAME}\" to \"${OPENCMS_HOME}${FILENAME}\" ..."
+		mv "${ARTIFACTS_FOLDER}TEMP/${FILENAME}" "${OPENCMS_HOME}/${FILENAME}"
+	done
+
+	echo "Updating OpenCms core JARs"
+	if [ -f ${OPENCMS_HOME}/WEB-INF/lib/core-libs.properties ]; then
+		echo "Deleting old JARs first"
+		while IFS='=' read -r key value
+		do
+			key=$(echo $key | tr '.' '_')
+			eval ${key}=\${value}
+		done < "${OPENCMS_HOME}/WEB-INF/lib/core-libs.properties"
+
+		IFS=',' read -r -a CORE_LIBS <<< "$OPENCMS_CORE_LIBS"
+		for CORE_LIB in ${CORE_LIBS[@]}
+		do
+			rm -f -v ${OPENCMS_HOME}/${CORE_LIB}
+		done
+	fi
+	echo "Moving new JARs"
+	mv ${ARTIFACTS_FOLDER}libs/* ${OPENCMS_HOME}/WEB-INF/lib/
+
+	echo "Update modules core"
+	bash ${APP_HOME}root/execute-opencms-shell.sh ${APP_HOME}config/update-core-modules.ocsh ${OPENCMS_HOME}
+
 else
 
 	cp -v ${OPENCMS_HOME}/WEB-INF/config/opencms.properties.orig ${OPENCMS_HOME}/WEB-INF/config/opencms.properties

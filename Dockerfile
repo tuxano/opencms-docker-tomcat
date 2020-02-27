@@ -30,10 +30,10 @@ ENV TOMCAT_LIB=${TOMCAT_HOME}/lib \
     TOMCAT_OPTS="-Xmx1g -Xms512m -server -XX:+UseConcMarkSweepGC" \
     GZIP=true \
 	ADMIN_PASSWD=admin \
-	DB_HOST=172.17.0.2 \
-	DB_NAME=opencmsgv1 \
-	DB_USER=root \
-	DB_PASSWD=toor\
+	DB_HOST=mysql \
+	DB_NAME=opencms \
+	DB_USER=mysql \
+	DB_PASSWD=mysql\
 	WEBRESOURCES_CACHE_SIZE=200000\
 	DEBUG=false
 
